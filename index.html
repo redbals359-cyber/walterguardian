@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Harinjing Pixel Adventure</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 12px;
+  background: #172b27;
+  color: #f7f1d5;
+  font-family: monospace;
+}
+
+.container {
+  max-width: 650px;
+  margin: auto;
+}
+
+header {
+  padding: 12px;
+  background: #29453b;
+  border: 3px solid #e7bd72;
+  margin-bottom: 10px;
+}
+
+h1 {
+  margin: 0 0 5px;
+  color: #ffdc91;
+  font-size: 24px;
+}
+
+header p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.topbar button {
+  flex: 1;
+  padding: 10px 5px;
+  border: 2px solid #e7bd72;
+  background: #29453b;
+  color: #ffdc91;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.game {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border: 4px solid #e7bd72;
+  background: #80b96b;
+  touch-action: none;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+/* ANALOG */
+.joystick {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  width: 94px;
+  height: 94px;
+  border: 3px solid #fff1c7;
+  border-radius: 50%;
+  background: rgba(23,43,39,.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  touch-action: none;
+}
+
+.stick {
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  background: #d8ad6a;
+  border: 3px solid #fff1c7;
+  box-shadow: 3px 3px #65492f;
+  pointer-events: none;
+}
+
+.action {
+  position: absolute;
+  right: 12px;
+  bottom: 18px;
+  width: 65px;
+  height: 65px;
+  border: 3px solid #fff1c7;
+  border-radius: 50%;
+  background: #a65f38;
+  color: white;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 11px;
+  box-shadow: 3px 3px #65492f;
+  touch-action: none;
+}
+
+.mission-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #203a30;
+  border-left: 4px solid #e7bd72;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.mission-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+#missionTitle {
+  color: #ffdc91;
+  font-weight: bold;
+}
+
+#missionCount {
+  color: #a9e6a0;
+}
+
+#message {
+  color: #a9e6a0;
+  margin-top: 3px;
+}
+
+.history {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #587a60;
+  color: #c8d9c4;
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.reset {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: none;
+  background: #e7bd72;
+  color: #203a30;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+/* LAYAR PENGHARGAAN */
+.reward {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  overflow-y: auto;
+  padding: 20px 14px;
+  background: rgba(12, 27, 22, .97);
+  align-items: center;
+  justify-content: center;
+}
+
+.reward.show {
+  display: flex;
+}
+
+.reward-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 18px;
+  background: #29453b;
+  border: 4px solid #e7bd72;
+  box-shadow: 5px 5px #0b1916;
+  text-align: center;
+}
+
+.reward h2 {
+  margin: 0 0 12px;
+  color: #ffdc91;
+  font-size: 21px;
+}
+
+.reward img {
+  display: block;
+  width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  background: #203a30;
+  border: 2px solid #b89a65;
+  image-rendering: auto;
+}
+
+.reward p {
+  font-size: 12px;
+  line-height: 1.9;
+  text-align: left;
+  color: #f7f1d5;
+}
+
+.reward .highlight {
+  color: #ffdc91;
+  font-weight: bold;
+}
+
+.reward button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: none;
+  background: #e7bd72;
+  color: #203a30;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.reward .secondary {
+  background: #172b27;
+  border: 1px solid #e7bd72;
+  color: #ffdc91;
+}
+
+body.fullscreen {
+  padding: 0;
+  overflow: hidden;
+}
+
+body.fullscreen .container {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+body.fullscreen header {
+  margin: 0;
+  padding: 6px 10px;
+}
+
+body.fullscreen h1 {
+  font-size: 18px;
+}
+
+body.fullscreen header p {
+  font-size: 9px;
+}
+
+body.fullscreen .topbar {
+  margin: 4px 0;
+}
+
+body.fullscreen .topbar button {
+  padding: 6px;
+}
+
+body.fullscreen .game {
+  width: 100%;
+  max-height: 72vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.fullscreen canvas {
+  width: 100%;
+  height: auto;
+  max-height: 72vh;
+  object-fit: contain;
+}
+
+body.fullscreen .mission-box {
+  margin-top: 5px;
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+body.fullscreen .history,
+body.fullscreen .reset {
+  display: none;
+}
+
+@media (max-width: 420px) {
+  body {
+    padding: 8px;
+  }
+
+  .joystick {
+    width: 80px;
+    height: 80px;
+    left: 8px;
+    bottom: 8px;
+  }
+
+  .stick {
+    width: 33px;
+    height: 33px;
+  }
+
+  .action {
+    width: 58px;
+    height: 58px;
+    right: 9px;
+    bottom: 14px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header>
+  <h1>HARINJING</h1>
+  <p>PIXEL ADVENTURE · JAWA KUNO</p>
+  <p>Jelajahi saluran air dan persawahan.</p>
+</header>
+
+<div class="topbar">
+  <button id="fullscreenBtn">⛶ FULL SCREEN</button>
+  <button id="soundBtn">🔊 NARASI AKTIF</button>
+</div>
+
+<div class="game" id="gameBox">
+  <canvas id="game" width="400" height="300"></canvas>
+
+  <div class="joystick" id="joystick">
+    <div class="stick" id="stick"></div>
+  </div>
+
+  <button class="action" id="action">AKSI</button>
+</div>
+
+<div class="mission-box">
+  <div class="mission-heading">
+    <span id="missionTitle">PERIKSA BENDUNGAN</span>
+    <span id="missionCount">1/3</span>
+  </div>
+  <div id="missionDescription">
+    Dekati bendungan dan tekan AKSI.
+  </div>
+  <div id="message">Gunakan analog untuk bergerak.</div>
+</div>
+
+<button class="reset" id="reset">ULANGI GAME</button>
+
+<div class="history">
+  <b>FAKTA SEJARAH</b><br>
+  Prasasti Harinjing bertarikh 804 Masehi berkaitan dengan
+  Bhagawanta Bari dan pembangunan sarana air.
+</div>
+
+</div>
+
+<!-- LAYAR PENGHARGAAN -->
+<div class="reward" id="reward">
+  <div class="reward-card">
+    <h2>SELAMAT!</h2>
+
+    <img
+      id="inscriptionImage"
+      src="https://raw.githubusercontent.com/redbals359-cyber/walterguardian/main/1792324493886.png"
+      alt="Gambar Prasasti Harinjing"
+    >
+
+    <p>
+      <span class="highlight">Misi berhasil diselesaikan!</span>
+      <br><br>
+      Sebagai penghargaan atas jasanya dalam pembangunan
+      sarana air di Harinjing, Bhagawanta Bari dikaitkan
+      dengan penetapan wilayah berstatus
+      <span class="highlight">sima</span>.
+      <br><br>
+      Status sima memberikan hak istimewa tertentu kepada
+      wilayah yang ditetapkan, termasuk pembebasan dari
+      kewajiban pajak tertentu sesuai ketentuan pada masa itu.
+      <br><br>
+      Kisah ini mengingatkan kita bahwa pengelolaan air
+      memiliki peran penting bagi kehidupan masyarakat.
+    </p>
+
+    <button id="playNarration">▶ PUTAR NARASI</button>
+    <button id="closeReward" class="secondary">KEMBALI KE GAME</button>
+    <button id="restartReward" class="secondary">MAIN LAGI</button>
+  </div>
+</div>
+
+<audio
+  id="narration"
+  preload="auto"
+  src="https://raw.githubusercontent.com/redbals359-cyber/walterguardian/main/Berbicara.mp3">
+</audio>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = 400;
+const H = 300;
+
+let player = { x: 190, y: 40, speed: 1.6 };
+let missionIndex = 0;
+let finished = false;
+let message = "Gunakan analog untuk bergerak.";
+let soundEnabled = true;
+
+const missions = [
+  {
+    title: "PERIKSA BENDUNGAN",
+    description: "Dekati bendungan dan tekan AKSI.",
+    x: 170, y: 76, done: false
+  },
+  {
+    title: "RAWAT SALURAN AIR",
+    description: "Periksa saluran yang ditandai, lalu tekan AKSI.",
+    x: 105, y: 154, done: false
+  },
+  {
+    title: "ALIRKAN AIR",
+    description: "Pergi ke sawah dan tekan AKSI.",
+    x: 290, y: 239, done: false
+  }
+];
+
+const keys = {};
+const joy = { x: 0, y: 0 };
+
+function box(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x), Math.round(y), w, h);
+}
+
+function label(str, x, y, color = "#fff", size = 9) {
+  ctx.font = `bold ${size}px monospace`;
+  ctx.fillStyle = "#263d2d";
+  ctx.fillText(str, x + 1, y + 1);
+  ctx.fillStyle = color;
+  ctx.fillText(str, x, y);
+}
+
+function drawGround() {
+  box(0, 0, W, H, "#80b96b");
+
+  for (let y = 0; y < H; y += 16) {
+    for (let x = 0; x < W; x += 16) {
+      if ((x + y) % 48 === 0) box(x + 4, y + 5, 3, 3, "#a0cc79");
+      if ((x * 3 + y) % 64 === 0) box(x + 10, y + 10, 3, 2, "#6ca65a");
+    }
+  }
+}
+
+function drawTree(x, y) {
+  box(x + 5, y + 8, 7, 12, "#795034");
+  box(x + 1, y + 2, 15, 12, "#326a3d");
+  box(x + 4, y - 2, 10, 9, "#448b48");
+  box(x + 5, y + 3, 4, 3, "#79b95b");
+}
+
+function drawHouse(x, y) {
+  box(x + 3, y + 9, 25, 20, "#d6b57b");
+  box(x, y + 5, 31, 7, "#704c37");
+  box(x + 5, y, 21, 8, "#8f5a3b");
+  box(x + 10, y + 16, 7, 13, "#62452f");
+  box(x + 21, y + 15, 4, 5, "#6e9caa");
+}
+
+function drawField() {
+  box(275, 210, 102, 72, "#d3b36b");
+  box(280, 215, 92, 62, "#6eaa54");
+
+  for (let y = 220; y < 275; y += 14) {
+    box(282, y, 88, 2, "#d4c17a");
+
+    for (let x = 288; x < 370; x += 14) {
+      box(x, y + 4, 4, 5, "#2f7540");
+      box(x + 3, y + 2, 4, 4, "#4c9448");
+    }
+  }
+
+  label("SAWAH", 304, 205, "#fff0b3", 10);
+}
+
+function drawCanal() {
+  const route = [
+    [170, -5], [170, 76], [105, 76],
+    [105, 154], [220, 154], [220, 239], [280, 239]
+  ];
+
+  function pathLine(color, width) {
+    ctx.beginPath();
+    ctx.moveTo(route[0][0], route[0][1]);
+    route.slice(1).forEach(p => ctx.lineTo(p[0], p[1]));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = "square";
+    ctx.lineJoin = "miter";
+    ctx.stroke();
+  }
+
+  pathLine("#70533a", 28);
+  pathLine("#b89a65", 22);
+  pathLine("#338bb5", 14);
+
+  box(165, 10, 4, 8, "#8de1e9");
+  box(173, 31, 4, 5, "#70c9e3");
+  box(130, 72, 7, 3, "#8de1e9");
+  box(101, 105, 4, 8, "#8de1e9");
+  box(110, 148, 8, 3, "#8de1e9");
+  box(216, 180, 4, 8, "#8de1e9");
+  box(225, 220, 7, 3, "#8de1e9");
+
+  // Bendungan
+  box(155, 67, 30, 7, "#69472f");
+  box(159, 64, 5, 12, "#c69b5e");
+  box(168, 64, 5, 12, "#c69b5e");
+  box(177, 64, 5, 12, "#c69b5e");
+
+  // Penanda saluran
+  box(92, 146, 7, 7, "#e6d39b");
+  box(111, 146, 7, 7, "#e6d39b");
+}
+
+function drawPlayer() {
+  const x = Math.round(player.x);
+  const y = Math.round(player.y);
+
+  box(x - 5, y + 8, 11, 3, "#476a42");
+  box(x - 4, y + 4, 3, 6, "#553e2b");
+  box(x + 2, y + 4, 3, 6, "#553e2b");
+  box(x - 6, y - 4, 12, 10, "#d6a14c");
+  box(x - 5, y - 3, 10, 7, "#477dba");
+  box(x - 5, y - 12, 10, 9, "#e9b982");
+  box(x - 6, y - 13, 12, 4, "#443329");
+  box(x - 5, y - 15, 9, 3, "#443329");
+  box(x - 3, y - 9, 2, 2, "#30251d");
+  box(x + 2, y - 9, 2, 2, "#30251d");
+  box(x - 6, y - 7, 12, 2, "#b8493f");
+}
+
+function drawTarget() {
+  if (finished) return;
+
+  const m = missions[missionIndex];
+
+  if (Math.floor(Date.now() / 300) % 2 === 0) {
+    box(m.x - 7, m.y - 17, 14, 2, "#fff0a1");
+    box(m.x - 7, m.y - 17, 2, 7, "#fff0a1");
+    box(m.x + 5, m.y - 17, 2, 7, "#fff0a1");
+  }
+}
+
+function draw() {
+  drawGround();
+
+  [
+    [25,35], [45,45], [345,35], [370,65],
+    [25,220], [355,190], [365,265], [45,265],
+    [310,35], [300,70], [35,115]
+  ].forEach(([x,y]) => drawTree(x,y));
+
+  drawHouse(285, 92);
+  drawHouse(43, 180);
+  drawField();
+
+  [
+    [65,83], [132,94], [76,174],
+    [185,132], [250,177], [303,183]
+  ].forEach(([x,y]) => {
+    box(x,y,6,4,"#8b8b6c");
+    box(x+1,y-2,3,3,"#b5ad82");
+  });
+
+  // Saluran air digambar paling akhir agar terlihat jelas.
+  drawCanal();
+  drawTarget();
+  drawPlayer();
+
+  if (!finished) {
+    const m = missions[missionIndex];
+    if (Math.hypot(player.x-m.x, player.y-m.y) < 34) {
+      box(140,8,120,18,"#29453b");
+      label("TEKAN AKSI",161,20,"#ffdc91",10);
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+
+function updateUI() {
+  if (finished) {
+    document.getElementById("missionTitle").textContent = "MISI SELESAI";
+    document.getElementById("missionCount").textContent = "3/3";
+    document.getElementById("missionDescription").textContent =
+      "Petualangan Harinjing berhasil diselesaikan.";
+    document.getElementById("message").textContent =
+      "Lihat penghargaan sejarahmu!";
+    return;
+  }
+
+  const m = missions[missionIndex];
+
+  document.getElementById("missionTitle").textContent = m.title;
+  document.getElementById("missionCount").textContent =
+    `${missionIndex + 1}/3`;
+  document.getElementById("missionDescription").textContent = m.description;
+  document.getElementById("message").textContent = message;
+}
+
+const reward = document.getElementById("reward");
+const narration = document.getElementById("narration");
+
+function showReward() {
+  reward.classList.add("show");
+
+  if (soundEnabled) {
+    narration.currentTime = 0;
+    narration.play().catch(() => {
+      document.getElementById("message").textContent =
+        "Tekan PUTAR NARASI jika suara belum terdengar.";
+    });
+  }
+}
+
+function interact() {
+  if (finished) return;
+
+  const m = missions[missionIndex];
+
+  if (Math.hypot(player.x-m.x, player.y-m.y) > 34) {
+    message = "Dekati tanda misi terlebih dahulu.";
+    updateUI();
+    return;
+  }
+
+  m.done = true;
+
+  if (missionIndex < missions.length - 1) {
+    missionIndex++;
+    message = "Misi berhasil! Lanjutkan ke lokasi berikutnya.";
+    updateUI();
+  } else {
+    finished = true;
+    updateUI();
+    showReward();
+  }
+}
+
+function updatePlayer() {
+  let dx = joy.x;
+  let dy = joy.y;
+
+  if (keys["ArrowLeft"] || keys["a"]) dx--;
+  if (keys["ArrowRight"] || keys["d"]) dx++;
+  if (keys["ArrowUp"] || keys["w"]) dy--;
+  if (keys["ArrowDown"] || keys["s"]) dy++;
+
+  const len = Math.hypot(dx,dy);
+
+  if (len > 1) {
+    dx /= len;
+    dy /= len;
+  }
+
+  player.x += dx * player.speed;
+  player.y += dy * player.speed;
+
+  player.x = Math.max(10,Math.min(W-10,player.x));
+  player.y = Math.max(16,Math.min(H-12,player.y));
+
+  requestAnimationFrame(updatePlayer);
+}
+
+// Analog sentuh
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+let pointerId = null;
+
+function moveStick(e) {
+  const r = joystick.getBoundingClientRect();
+  const cx = r.left + r.width/2;
+  const cy = r.top + r.height/2;
+
+  let dx = e.clientX-cx;
+  let dy = e.clientY-cy;
+
+  const max = r.width*0.30;
+  const len = Math.hypot(dx,dy);
+
+  if (len > max) {
+    dx = dx/len*max;
+    dy = dy/len*max;
+  }
+
+  joy.x = dx/max;
+  joy.y = dy/max;
+
+  stick.style.transform = `translate(${dx}px,${dy}px)`;
+}
+
+function resetStick() {
+  joy.x = 0;
+  joy.y = 0;
+  pointerId = null;
+  stick.style.transform = "translate(0,0)";
+}
+
+joystick.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  pointerId = e.pointerId;
+  joystick.setPointerCapture(e.pointerId);
+  moveStick(e);
+});
+
+joystick.addEventListener("pointermove", e => {
+  if (e.pointerId === pointerId) moveStick(e);
+});
+
+joystick.addEventListener("pointerup", resetStick);
+joystick.addEventListener("pointercancel", resetStick);
+joystick.addEventListener("lostpointercapture", resetStick);
+
+document.getElementById("action").addEventListener("pointerdown", e => {
+  e.preventDefault();
+  interact();
+});
+
+window.addEventListener("keydown", e => {
+  keys[e.key] = true;
+
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    if (!e.repeat) interact();
+  }
+});
+
+window.addEventListener("keyup", e => {
+  keys[e.key] = false;
+});
+
+// Full screen
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+
+async function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen();
+    } else {
+      await document.exitFullscreen();
+    }
+  } catch (err) {
+    // Fallback untuk browser yang tidak mendukung fullscreen API.
+    document.body.classList.toggle("fullscreen");
+  }
+}
+
+fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+document.addEventListener("fullscreenchange", () => {
+  document.body.classList.toggle("fullscreen", !!document.fullscreenElement);
+  fullscreenBtn.textContent = document.fullscreenElement
+    ? "⛶ KELUAR FULL SCREEN"
+    : "⛶ FULL SCREEN";
+});
+
+// Kontrol narasi
+document.getElementById("soundBtn").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+
+  if (!soundEnabled) narration.pause();
+
+  document.getElementById("soundBtn").textContent =
+    soundEnabled ? "🔊 NARASI AKTIF" : "🔇 NARASI MATI";
+});
+
+document.getElementById("playNarration").addEventListener("click", () => {
+  narration.currentTime = 0;
+  narration.play().catch(() => {
+    alert("Audio tidak bisa diputar. Periksa koneksi internet.");
+  });
+});
+
+document.getElementById("closeReward").addEventListener("click", () => {
+  narration.pause();
+  reward.classList.remove("show");
+});
+
+function restartGame() {
+  narration.pause();
+  narration.currentTime = 0;
+  reward.classList.remove("show");
+
+  player = { x:190, y:40, speed:1.6 };
+  missionIndex = 0;
+  finished = false;
+  message = "Gunakan analog untuk bergerak.";
+
+  missions.forEach(m => m.done = false);
+
+  resetStick();
+  updateUI();
+}
+
+document.getElementById("reset").addEventListener("click", restartGame);
+document.getElementById("restartReward").addEventListener("click", restartGame);
+
+updateUI();
+draw();
+updatePlayer();
+</script>
+</body>
+</html>
