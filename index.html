@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penjaga Air Harinjing - Game Pelestarian Air</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #2c3e50;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 15px;
+      background: #1a252f;
+      width: 100%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #2ecc71;
+    }
+
+    p.subtitle {
+      margin: 5px 0 0;
+      font-size: 13px;
+      color: #bdc3c7;
+    }
+
+    /* Dashboard Status */
+    .dashboard {
+      display: flex;
+      justify-content: space-around;
+      width: 90%;
+      max-width: 600px;
+      background: #34495e;
+      margin: 15px 0;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+    }
+
+    .stat-box {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #ecf0f1;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: bold;
+      color: #f1c40f;
+    }
+
+    /* Peta Game (Grid drop zone) */
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 90%;
+      max-width: 600px;
+      margin-bottom: 20px;
+    }
+
+    .tile {
+      background: #27ae60;
+      border: 3px dashed #1e8449;
+      border-radius: 12px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      text-align: center;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .tile.hovered {
+      background: #2ecc71;
+      border-color: #f1c40f;
+    }
+
+    .tile-title {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      opacity: 0.8;
+    }
+
+    .placed-item {
+      font-size: 28px;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Inventory Items (Draggable) */
+    .inventory-container {
+      width: 90%;
+      max-width: 600px;
+      background: #1a252f;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .inventory-title {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #3498db;
+    }
+
+    .inventory {
+      display: flex;
+      justify-content: space-around;
+      gap: 10px;
+    }
+
+    .drag-item {
+      background: #e67e22;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: grab;
+      width: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .drag-item:active {
+      cursor: grabbing;
+      transform: scale(1.05);
+    }
+
+    .drag-item span.icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    /* Message Box */
+    .message-box {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #e74c3c;
+      min-height: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📜 Penjaga Air Harinjing</h1>
+    <p class="subtitle">Bantu Bhagawanta Bari & warga melestarikan air Sungai Harinjing!</p>
+  </header>
+
+  <!-- Status / Target Game -->
+  <div class="dashboard">
+    <div class="stat-box">
+      <div class="stat-label">Kebersihan Air</div>
+      <div class="stat-value" id="cleanliness">30%</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Irigasi Sawah</div>
+      <div class="stat-value" id="irrigation">0/2</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Semangat Warga</div>
+      <div class="stat-value" id="morale">⭐ 50</div>
+    </div>
+  </div>
+
+  <!-- Area Peta / Grid Game -->
+  <div class="game-board">
+    <!-- Hulu / Sungai -->
+    <div class="tile" data-accept="tree" id="tile-hulu">
+      <div class="tile-title">🌱 Resapan Hulu</div>
+      <div class="content"><i>Seret Pohon</i></div>
+    </div>
+    <div class="tile" data-accept="dam" id="tile-sungai">
+      <div class="tile-title">🌊 Bendungan Sungai</div>
+      <div class="content"><i>Seret Pintu Air</i></div>
+    </div>
+    <div class="tile" data-accept="worker" id="tile-pembersihan">
+      <div class="tile-title">🧹 Area Tanggul</div>
+      <div class="content"><i>Seret Warga</i></div>
+    </div>
+
+    <!-- Hilir / Sawah -->
+    <div class="tile" data-accept="canal" id="tile-terusan1">
+      <div class="tile-title">🌾 Saluran Sawah 1</div>
+      <div class="content"><i>Seret Terusan</i></div>
+    </div>
+    <div class="tile" data-accept="canal" id="tile-terusan2">
+      <div class="tile-title">🌾 Saluran Sawah 2</div>
+      <div class="content"><i>Seret Terusan</i></div>
+    </div>
+    <div class="tile" data-accept="monument" id="tile-prasasti">
+      <div class="tile-title">🏛️ Lokasi Prasasti</div>
+      <div class="content"><i>Kunci Kelestarian</i></div>
+    </div>
+  </div>
+
+  <!-- Panel Peralatan / Warga ( Inventory ) -->
+  <div class="inventory-container">
+    <div class="inventory-title">👇 Seret elemen di bawah ke lokasi yang tepat:</div>
+    <div class="inventory">
+      <div class="drag-item" draggable="true" id="item-tree" data-type="tree">
+        <span class="icon">🌳</span>
+        <span>Pohon</span>
+      </div>
+      <div class="drag-item" draggable="true" id="item-dam" data-type="dam">
+        <span class="icon">⛩️</span>
+        <span>Pintu Air</span>
+      </div>
+      <div class="drag-item" draggable="true" id="item-worker" data-type="worker">
+        <span class="icon">🚶</span>
+        <span>Warga</span>
+      </div>
+      <div class="drag-item" draggable="true" id="item-canal" data-type="canal">
+        <span class="icon">🌊</span>
+        <span>Terusan</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="message-box" id="msg"></div>
+
+  <script>
+    // Inisialisasi Status Game
+    let state = {
+      cleanliness: 30,
+      irrigationCount: 0,
+      morale: 50,
+      placedItems: {}
+    };
+
+    const tiles = document.querySelectorAll('.tile');
+    const dragItems = document.querySelectorAll('.drag-item');
+    const msgBox = document.getElementById('msg');
+
+    // Setup Event Listener Drag pada Elemen Inventory
+    dragItems.forEach(item => {
+      item.addEventListener('dragstart', handleDragStart);
+    });
+
+    // Setup Event Listener Drop Zone pada Grid Peta
+    tiles.forEach(tile => {
+      tile.addEventListener('dragover', handleDragOver);
+      tile.addEventListener('dragleave', handleDragLeave);
+      tile.addEventListener('drop', handleDrop);
+    });
+
+    function handleDragStart(e) {
+      e.dataTransfer.setData('text/plain', e.target.dataset.type);
+      e.dataTransfer.setData('element-id', e.target.id);
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('hovered');
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('hovered');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      const tile = e.currentTarget;
+      tile.classList.remove('hovered');
+
+      const itemType = e.dataTransfer.getData('text/plain');
+      const elementId = e.dataTransfer.getData('element-id');
+      const requiredType = tile.dataset.accept;
+
+      // Validasi apakah item ditaruh di lokasi yang benar
+      if (itemType === requiredType) {
+        if (tile.classList.contains('filled')) {
+          showMsg('Lokasi ini sudah terisi!', '#f39c12');
+          return;
+        }
+
+        // Pasang elemen di lokasi
+        applySuccessPlacement(tile, itemType, elementId);
+      } else {
+        showMsg('❌ Lokasi tidak cocok! Perhatikan fungsi elemen.', '#e74c3c');
+      }
+    }
+
+    function applySuccessPlacement(tile, type, elementId) {
+      tile.classList.add('filled');
+      
+      // Sembunyikan item dari inventory
+      const draggedElement = document.getElementById(elementId);
+      if (draggedElement) {
+        draggedElement.style.visibility = 'hidden';
+      }
+
+      // Tampilkan ikon hasil di grid
+      let icon = '';
+      let text = '';
+
+      switch(type) {
+        case 'tree':
+          icon = '🌳';
+          text = 'Resapan Penahan Erosi';
+          state.cleanliness += 25;
+          state.morale += 15;
+          break;
+        case 'dam':
+          icon = '⛩️';
+          text = 'Pengatur Debit Air';
+          state.cleanliness += 20;
+          state.morale += 10;
+          break;
+        case 'worker':
+          icon = '🚶🧹';
+          text = 'Pembersih Sampah';
+          state.cleanliness += 25;
+          state.morale += 20;
+          break;
+        case 'canal':
+          icon = '🌊🌾';
+          text = 'Irigasi Mengalir';
+          state.irrigationCount += 1;
+          state.morale += 10;
+          break;
+      }
+
+      tile.querySelector('.content').innerHTML = `
+        <div class="placed-item">${icon}</div>
+        <div style="font-size: 11px; margin-top: 4px;">${text}</div>
+      `;
+
+      showMsg('✨ Bagus! Tugas berhasil diselesaikan.', '#2ecc71');
+      updateUI();
+      checkWinCondition();
+    }
+
+    function updateUI() {
+      document.getElementById('cleanliness').textContent = `${Math.min(state.cleanliness, 100)}%`;
+      document.getElementById('irrigation').textContent = `${state.irrigationCount}/2`;
+      document.getElementById('morale').textContent = `⭐ ${state.morale}`;
+    }
+
+    function showMsg(text, color) {
+      msgBox.textContent = text;
+      msgBox.style.color = color;
+    }
+
+    function checkWinCondition() {
+      // Jika semua area penting terisi
+      if (state.cleanliness >= 100 && state.irrigationCount === 2) {
+        setTimeout(() => {
+          alert('🎉 SELAMAT! Anda dan warga desa berhasil melestarikan air Sungai Harinjing!\n\nRaja menganugerahkan PRASASTI HARINJING atas jasa Bhagawanta Bari dan masyarakat Desa Siman.');
+          
+          // Aktifkan prasasti
+          const prasastiTile = document.getElementById('tile-prasasti');
+          prasastiTile.querySelector('.content').innerHTML = `
+            <div class="placed-item">📜✨</div>
+            <div style="font-size: 11px; font-weight: bold; color: #f1c40f;">Prasasti Harinjing Berdiri!</div>
+          `;
+        }, 500);
+      }
+    }
+  </script>
+</body>
+</html>
