@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#304b39">
+<title>Harinjing Pixel Adventure</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#263d30;font-family:monospace;touch-action:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated}
+button{font-family:inherit;touch-action:manipulation;cursor:pointer}
+#hud{position:fixed;top:12px;right:12px;width:min(205px,43vw);padding:11px;background:#f0e8d3ee;border:1px solid #827e69;border-radius:5px;z-index:5;color:#29382c;pointer-events:none}
+#hud-title{font-size:10px;font-weight:bold;letter-spacing:1px}
+#hud-subtitle{font:11px/1.4 Arial;margin-top:5px;color:#65715d}
+#mission-name{font-size:10px;line-height:1.5;margin-top:9px}
+#progress-track{height:4px;background:#d2c7ad;margin-top:7px}
+#progress-fill{height:100%;width:0;background:#64805b}
+#mission-count{font-size:9px;margin-top:6px;color:#65715d}
+#sound-toggle,#fullscreen-button{position:fixed;left:10px;z-index:7;padding:8px;font-size:10px;color:#f0e8d3;background:#263d30dd;border:1px solid #b6c1a2;border-radius:4px}
+#sound-toggle{top:10px}
+#fullscreen-button{top:45px}
+#controls{position:fixed;inset:0;pointer-events:none;z-index:8}
+#joystick{position:absolute;left:20px;bottom:23px;width:112px;height:112px;border-radius:50%;background:#f0e8d32c;border:2px solid #f0e8d380;pointer-events:auto;touch-action:none;user-select:none}
+#stick{position:absolute;left:50%;top:50%;width:45px;height:45px;margin:-22.5px;border-radius:50%;background:#e5d8b9;border:3px solid #6d7d61;pointer-events:none}
+#action-button{position:absolute;right:22px;bottom:38px;width:70px;height:70px;border-radius:50%;background:#e5d8b9;border:3px solid #6d7d61;color:#29382c;font-weight:bold;font-size:11px;pointer-events:auto}
+#notice{display:none;position:fixed;left:50%;bottom:150px;transform:translateX(-50%);max-width:80vw;width:max-content;padding:10px 13px;border-radius:4px;background:#f0e8d3f5;color:#29382c;font:12px/1.5 Arial;text-align:center;z-index:12}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:#132018c9;z-index:20}
+.card{width:min(410px,100%);max-height:90vh;overflow:auto;padding:20px;background:#f0e8d3;border:2px solid #b7aa8d;border-radius:6px;color:#29382c;text-align:center}
+.eyebrow{font-size:10px;letter-spacing:2px;color:#63745b;margin-bottom:12px}
+.card h1{font-size:19px;line-height:1.4;margin:8px 0 12px}
+.card p{font:14px/1.7 Arial,sans-serif;color:#485347;margin:10px 0 18px}
+.card button{display:block;width:100%;padding:13px;margin-top:9px;border:0;border-radius:4px;background:#304b39;color:#f0e8d3;font-size:11px;font-weight:bold;letter-spacing:1px}
+.card button.secondary{background:transparent;color:#304b39;border:1px solid #a9b19e}
+#speaking-screen,#dialogue,#ending{display:none}
+#inscription-image{display:block;width:min(220px,75%);max-height:220px;object-fit:contain;margin:0 auto 14px;padding:5px;background:#ddd0b3;border:1px solid #d0c3a6;image-rendering:pixelated}
+@media(max-width:420px){
+ #hud{top:8px;right:8px;width:42vw;padding:9px}
+ #hud-title{font-size:9px}
+ #hud-subtitle{font-size:10px}
+ #mission-name{font-size:9px}
+ #joystick{width:102px;height:102px;left:16px;bottom:18px}
+ #action-button{width:64px;height:64px;right:18px;bottom:32px}
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+ <div id="hud-title">HARINJING VILLAGE</div>
+ <div id="hud-subtitle">Jelajahi desa dan pelajari sejarahnya.</div>
+ <div id="mission-name">Misi: Temukan saluran air</div>
+ <div id="progress-track"><div id="progress-fill"></div></div>
+ <div id="mission-count">0 dari 3 misi selesai</div>
+</div>
+
+<button id="sound-toggle">SUARA: AKTIF</button>
+<button id="fullscreen-button">LAYAR PENUH</button>
+
+<div id="controls">
+ <div id="joystick"><div id="stick"></div></div>
+ <button id="action-button">AKSI</button>
+</div>
+<div id="notice"></div>
+
+<div class="overlay" id="intro">
+ <div class="card">
+  <div class="eyebrow">HARINJING PIXEL ADVENTURE</div>
+  <h1>Jejak Sejarah Harinjing</h1>
+  <p>Jelajahi permukiman, telusuri saluran air, dan kenali peninggalan sejarah dari masa Kerajaan Mataram Kuno.</p>
+  <button id="start-button">MULAI</button>
+ </div>
+</div>
+
+<div class="overlay" id="speaking-screen">
+ <div class="card">
+  <div class="eyebrow">SEBUAH PESAN DARI MASA LALU</div>
+  <img id="inscription-image" src="https://raw.githubusercontent.com/redbals359-cyber/walterguardian/main/1792324493886.png" alt="Prasasti Harinjing">
+  <h1>Prasasti Harinjing</h1>
+  <p>Halo! Aku Prasasti Harinjing, peninggalan Kerajaan Mataram Kuno. Aku mencatat penghargaan kepada Bhagawanta Bari atas jasanya membangun saluran air.</p>
+  <button id="listen-button" class="secondary">PUTAR SUARA</button>
+  <button id="finish-reading-button">SELESAI MEMBACA</button>
+ </div>
+</div>
+
+<div class="overlay" id="dialogue">
+ <div class="card">
+  <div class="eyebrow">CATATAN PETUALANGAN</div>
+  <h1 id="dialogue-title">Misi</h1>
+  <p id="dialogue-text"></p>
+  <button id="dialogue-continue">LANJUTKAN</button>
+ </div>
+</div>
+
+<div class="overlay" id="ending">
+ <div class="card">
+  <div class="eyebrow">PETUALANGAN SELESAI</div>
+  <h1>Penghargaan Bhagawanta Bari</h1>
+  <p>Prasasti Harinjing mencatat jasa Bhagawanta Bari dalam pembangunan saluran air dan penetapan sima yang berkaitan dengan jasa tersebut. Dalam permainan ini, penghargaan menjadi simbol pentingnya kerja sama dan pengelolaan air bagi masyarakat.</p>
+  <button id="restart-button">MAIN LAGI</button>
+ </div>
+</div>
+
+<audio id="intro-audio" src="https://raw.githubusercontent.com/redbals359-cyber/walterguardian/main/Berbicara.mp3" loop preload="auto"></audio>
+
+<script>
+(() => {
+"use strict";
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const WORLD_W=1800,WORLD_H=1300,TILE=32;
+
+let sw=innerWidth,sh=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+let scale=1,cameraX=0,cameraY=0;
+
+function resize(){
+ sw=innerWidth;sh=innerHeight;dpr=Math.min(devicePixelRatio||1,2);
+ canvas.width=Math.round(sw*dpr);
+ canvas.height=Math.round(sh*dpr);
+ scale=Math.max(sw/WORLD_W,sh/WORLD_H);
+}
+addEventListener("resize",resize);resize();
+
+function loadImage(src){const im=new Image();im.src=src;return im}
+const treeImage=loadImage("https://raw.githubusercontent.com/redbals359-cyber/walterguardian/main/Pohon.png");
+
+const audio=document.getElementById("intro-audio");
+const speakingScreen=document.getElementById("speaking-screen");
+const intro=document.getElementById("intro");
+const dialogue=document.getElementById("dialogue");
+const ending=document.getElementById("ending");
+const notice=document.getElementById("notice");
+let soundEnabled=true,introFinished=false,dialogueOpen=false,endingOpen=false;
+let currentMission=0,lastTime=0,noticeTimer;
+
+audio.loop=true;audio.volume=.7;
+
+function playAudio(){
+ if(soundEnabled) audio.play().catch(()=>showNotice("Tekan PUTAR SUARA jika audio belum terdengar."));
+}
+function stopAudio(){audio.pause();audio.currentTime=0}
+
+document.getElementById("start-button").onclick=()=>{
+ intro.style.display="none";
+ speakingScreen.style.display="flex";
+ playAudio();
+};
+document.getElementById("listen-button").onclick=()=>{
+ if(audio.paused)playAudio();else audio.pause();
+};
+document.getElementById("finish-reading-button").onclick=()=>{
+ stopAudio();speakingScreen.style.display="none";introFinished=true;
+ showNotice("Cari tanda seru (!) untuk menemukan misi.");
+};
+document.getElementById("sound-toggle").onclick=()=>{
+ soundEnabled=!soundEnabled;
+ document.getElementById("sound-toggle").textContent="SUARA: "+(soundEnabled?"AKTIF":"MATI");
+ if(!soundEnabled)audio.pause();
+ else if(speakingScreen.style.display==="flex")playAudio();
+};
+document.getElementById("fullscreen-button").onclick=async()=>{
+ try{
+  if(!document.fullscreenElement)await document.documentElement.requestFullscreen();
+  else await document.exitFullscreen();
+ }catch{showNotice("Layar penuh tidak tersedia di browser ini.")}
+};
+
+const player={x:170,y:260,speed:2.8,direction:"down",moving:false,frame:0};
+let joyX=0,joyY=0,pointerId=null;
+const keys={};
+
+/* Saluran air */
+const channel=[
+ [0,440],[290,440],[290,650],[610,650],
+ [610,850],[1000,850],[1000,1050],[1390,1050],[1390,1300]
+];
+
+/* Rumah mengelompok di pusat permukiman.
+   Ukuran setiap rumah dibuat lebih besar. */
+const houses=[
+ {x:100,y:90,type:0},{x:260,y:90,type:1},{x:420,y:90,type:2},
+ {x:100,y:225,type:1},{x:260,y:225,type:2},{x:420,y:225,type:0},
+
+ {x:720,y:100,type:2},{x:880,y:100,type:0},{x:1040,y:100,type:1},
+ {x:720,y:235,type:0},{x:880,y:235,type:1},{x:1040,y:235,type:2},
+
+ {x:1190,y:290,type:1},{x:1350,y:290,type:0},
+ {x:1190,y:425,type:2},{x:1350,y:425,type:1},
+
+ {x:1460,y:620,type:0},{x:1620,y:620,type:2},
+ {x:1460,y:760,type:1},{x:1620,y:760,type:0}
+];
+
+/* Pohon di tepi desa dan lahan kosong, tidak ditaruh
+   di tengah petak sawah atau jalan utama. */
+const trees=[
+ [25,30],[570,40],[650,35],[1120,35],[1440,35],[1710,35],
+ [25,170],[25,310],[580,170],[650,300],
+ [1120,170],[1440,190],[1730,220],
+ [25,540],[80,700],[380,700],[500,740],
+ [730,600],[860,600],[1120,590],[1420,520],[1730,530],
+ [100,900],[320,940],[500,960],[750,950],
+ [1150,940],[1500,950],[1720,1020],
+ [100,1170],[400,1190],[750,1190],[1120,1190],[1520,1190],[1720,1210]
+];
+
+const paddies=[
+ [1080,730],[1200,730],[1320,730],
+ [1080,820],[1200,820],[1320,820],
+ [1080,910],[1200,910],[1320,910]
+];
+
+/* Hambatan */
+const obstacles=[
+ {x:500,y:340,w:35,h:35,type:"rock"},
+ {x:650,y:360,w:35,h:35,type:"rock"},
+ {x:730,y:480,w:100,h:20,type:"fence"},
+ {x:870,y:480,w:90,h:20,type:"fence"},
+ {x:1100,y:520,w:35,h:35,type:"rock"},
+ {x:1240,y:560,w:35,h:35,type:"rock"},
+ {x:370,y:770,w:90,h:20,type:"fence"},
+ {x:510,y:770,w:90,h:20,type:"fence"},
+ {x:730,y:1100,w:35,h:35,type:"rock"},
+ {x:890,y:1140,w:35,h:35,type:"rock"}
+];
+
+const missions=[
+ {title:"1. Periksa saluran air",name:"Temukan saluran air",x:290,y:440,
+  text:"Temukan bagian awal saluran. Saluran air membantu memenuhi kebutuhan masyarakat."},
+ {title:"2. Rawat saluran air",name:"Periksa jalur air",x:610,y:650,
+  text:"Saluran perlu dijaga agar air dapat mengalir dengan baik. Periksa jalur air di dekatmu."},
+ {title:"3. Alirkan air",name:"Temukan persawahan",x:1390,y:1050,
+  text:"Ikuti jalur menuju persawahan. Air berperan penting dalam pertanian dan kehidupan masyarakat."}
+];
+
+function rect(x,y,w,h,c){
+ ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);
+}
+
+function drawGround(){
+ rect(0,0,WORLD_W,WORLD_H,"#8ca56c");
+ for(let y=0;y<WORLD_H;y+=TILE){
+  for(let x=0;x<WORLD_W;x+=TILE){
+   let n=(x*13+y*7)%11;
+   if(n<3)rect(x+7,y+8,3,3,"#819a62");
+   if(n===5)rect(x+20,y+19,3,3,"#a4b47b");
+  }
+ }
+}
+
+/* Jalan tanah dengan beberapa cabang menuju pusat rumah */
+function drawRoad(points,width=64,color="#c9b487"){
+ ctx.beginPath();
+ points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
+ ctx.lineCap="square";ctx.lineJoin="miter";
+ ctx.strokeStyle="#8a704c";ctx.lineWidth=width+8;ctx.stroke();
+ ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+}
+
+function drawRoads(){
+ drawRoad([[0,340],[600,340],[600,400],[1100,400],[1100,550],[1500,550]],58);
+ drawRoad([[600,340],[600,150],[850,150]],48);
+ drawRoad([[600,400],[600,550],[900,550]],48);
+ drawRoad([[1100,400],[1100,250],[1400,250]],45);
+ drawRoad([[1100,550],[1100,680],[1450,680]],45);
+ drawRoad([[1500,550],[1500,850],[1390,850],[1390,1050]],48);
+ drawRoad([[0,1000],[400,1000],[400,1120],[900,1120]],44);
+}
+
+function drawChannel(){
+ function stroke(color,width){
+  ctx.beginPath();
+  channel.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
+  ctx.lineCap="square";ctx.lineJoin="miter";
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+ }
+ stroke("#8a704c",58);stroke("#c9b487",48);stroke("#6599b1",29);
+ for(let i=0;i<channel.length-1;i++){
+  const [x1,y1]=channel[i],[x2,y2]=channel[i+1];
+  if(x1===x2){
+   for(let y=Math.min(y1,y2)+20;y<Math.max(y1,y2);y+=45)rect(x1-7,y,13,3,"#a6c4c9");
+  }else{
+   for(let x=Math.min(x1,x2)+20;x<Math.max(x1,x2);x+=45)rect(x,y1-6,13,3,"#a6c4c9");
+  }
+ }
+}
+
+/* Rumah pixel art buatan sendiri dengan tiga variasi */
+function drawHouse(h){
+ const x=h.x,y=h.y,t=h.type;
+ const roofs=["#8c4e3b","#665348","#9a6842"];
+ const walls=["#d5b887","#c9c5a0","#d9c8a2"];
+ const doors=["#654735","#74503a","#574637"];
+ const windows=["#73969a","#8aa4a0","#6f8c91"];
+
+ // Bayangan
+ rect(x+8,y+74,78,7,"#59694b");
+
+ // Atap bertingkat
+ rect(x+4,y+18,84,9,roofs[t]);
+ rect(x+10,y+10,72,9,roofs[t]);
+ rect(x+18,y+2,56,9,roofs[t]);
+ rect(x+24,y,40,4,roofs[t]);
+ rect(x+9,y+27,74,7,"#76503a");
+
+ // Dinding
+ rect(x+13,y+32,66,43,walls[t]);
+ rect(x+17,y+36,58,35,t===1?"#d5c9a5":"#dfc99c");
+
+ // Balok kayu
+ rect(x+13,y+32,4,43,"#8b6946");
+ rect(x+75,y+32,4,43,"#8b6946");
+
+ // Pintu
+ rect(x+39,y+48,16,27,doors[t]);
+ rect(x+42,y+51,10,21,t===2?"#876447":"#76523a");
+ rect(x+51,y+61,2,2,"#d8bd7f");
+
+ // Jendela
+ rect(x+20,y+41,12,12,"#694d39");
+ rect(x+22,y+43,8,8,windows[t]);
+ rect(x+61,y+41,12,12,"#694d39");
+ rect(x+63,y+43,8,8,windows[t]);
+
+ // Kisi jendela
+ rect(x+25,y+43,2,8,"#d8bd7f");
+ rect(x+22,y+46,8,2,"#d8bd7f");
+ rect(x+66,y+43,2,8,"#d8bd7f");
+ rect(x+63,y+46,8,2,"#d8bd7f");
+
+ // Detail tambahan tiap rumah
+ if(t===0){
+  rect(x+8,y+20,76,4,"#b77b4d");
+  rect(x+31,y+29,31,3,"#a97b50");
+ }else if(t===1){
+  rect(x+21,y+7,49,3,"#9b8770");
+  rect(x+35,y+70,24,5,"#9d8760");
+ }else{
+  rect(x+14,y+24,64,3,"#c49a62");
+  rect(x+33,y+33,27,3,"#e6d8b6");
+ }
+}
+
+function drawHouses(){for(const h of houses)drawHouse(h)}
+
+function drawTree(x,y){
+ if(treeImage.complete&&treeImage.naturalWidth){
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(treeImage,x,y,48,54);
+ }else{
+  rect(x+12,y+27,10,22,"#75583b");
+  rect(x+2,y+9,30,25,"#466b43");
+  rect(x+8,y,20,24,"#587d4b");
+  rect(x+8,y+8,8,8,"#71905a");
+ }
+}
+function drawTrees(){for(const [x,y] of trees)drawTree(x,y)}
+
+function drawPaddies(){
+ for(const [x,y] of paddies){
+  rect(x,y,106,70,"#b6ba78");
+  rect(x+4,y+4,98,62,"#9fb478");
+  for(let i=0;i<8;i++){
+   rect(x+10+i*11,y+12,3,43,"#647e4a");
+   rect(x+8+i*11,y+19,6,3,"#718a4d");
+  }
+  rect(x,y,106,3,"#b7a17b");rect(x,y+67,106,3,"#b7a17b");
+ }
+}
+
+function drawObstacles(){
+ for(const o of obstacles){
+  if(o.type==="rock"){
+   rect(o.x+3,o.y+5,o.w-5,o.h-5,"#77796a");
+   rect(o.x+7,o.y,o.w-14,8,"#a3a28c");
+   rect(o.x+9,o.y+8,8,5,"#b4b29b");
+  }else{
+   rect(o.x,o.y+4,o.w,5,"#79583d");
+   rect(o.x,o.y+13,o.w,5,"#79583d");
+   for(let x=o.x+5;x<o.x+o.w;x+=18)rect(x,o.y,5,24,"#9c7951");
+  }
+ }
+}
+
+function drawPlayer(){
+ const x=Math.round(player.x),y=Math.round(player.y);
+ const step=player.moving?Math.floor(player.frame/8)%2:0;
+ rect(x-8,y+13,16,4,"#394a34");
+ rect(x-6,y+4,5,9+(step?2:0),"#554b3c");
+ rect(x+2,y+4,5,9-(step?2:0),"#554b3c");
+ rect(x-8,y-9,16,15,"#8e9d69");
+ rect(x-7,y-8,14,11,"#a8b47d");
+ rect(x-11,y-7,4,10,"#d2ad80");
+ rect(x+7,y-7,4,10,"#d2ad80");
+ rect(x-7,y-21,14,13,"#d9b38a");
+ rect(x-8,y-23,16,6,"#493e30");
+ rect(x-7,y-25,13,4,"#493e30");
+ if(player.direction==="left")rect(x-6,y-16,2,2,"#29382c");
+ else if(player.direction==="right")rect(x+4,y-16,2,2,"#29382c");
+ else{rect(x-4,y-16,2,2,"#29382c");rect(x+3,y-16,2,2,"#29382c")}
+}
+
+/* Tabrakan rumah, pohon, batu, pagar dan air */
+function overlap(a,b){
+ return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+}
+function collidesAt(x,y){
+ const p={x:x-7,y:y+2,w:14,h:12};
+
+ for(const h of houses){
+  if(overlap(p,{x:h.x+13,y:h.y+32,w:66,h:43}))return true;
+ }
+ for(const [tx,ty] of trees){
+  if(overlap(p,{x:tx+8,y:ty+22,w:28,h:28}))return true;
+ }
+ for(const o of obstacles){
+  if(overlap(p,{x:o.x,y:o.y,w:o.w,h:o.h}))return true;
+ }
+
+ // Saluran air menjadi hambatan, tetapi tepinya masih dapat dilalui.
+ for(let i=0;i<channel.length-1;i++){
+  const [x1,y1]=channel[i],[x2,y2]=channel[i+1];
+  const water=x1===x2
+   ?{x:x1-15,y:Math.min(y1,y2),w:30,h:Math.abs(y2-y1)}
+   :{x:Math.min(x1,x2),y:y1-15,w:Math.abs(x2-x1),h:30};
+  if(overlap(p,water))return true;
+ }
+
+ for(const [fx,fy] of paddies){
+  const borders=[
+   {x:fx,y:fy,w:106,h:4},{x:fx,y:fy+66,w:106,h:4},
+   {x:fx,y:fy,w:4,h:70},{x:fx+102,y:fy,w:4,h:70}
+  ];
+  if(borders.some(b=>overlap(p,b)))return true;
+ }
+ return false;
+}
+
+/* Kamera */
+function updateCamera(){
+ const vw=sw/scale,vh=sh/scale;
+ cameraX=Math.max(0,Math.min(WORLD_W-vw,player.x-vw/2));
+ cameraY=Math.max(0,Math.min(WORLD_H-vh,player.y-vh/2));
+}
+
+/* Analog dan keyboard */
+function updatePlayer(dt){
+ if(!introFinished||dialogueOpen||endingOpen){player.moving=false;return}
+
+ let dx=joyX,dy=joyY;
+ if(keys.ArrowLeft||keys.a||keys.A)dx--;
+ if(keys.ArrowRight||keys.d||keys.D)dx++;
+ if(keys.ArrowUp||keys.w||keys.W)dy--;
+ if(keys.ArrowDown||keys.s||keys.S)dy++;
+
+ const mag=Math.hypot(dx,dy);
+ if(mag>1){dx/=mag;dy/=mag}
+ player.moving=Math.abs(dx)+Math.abs(dy)>.05;
+
+ if(player.moving){
+  const nx=player.x+dx*player.speed*dt;
+  const ny=player.y+dy*player.speed*dt;
+  if(!collidesAt(nx,player.y))player.x=nx;
+  if(!collidesAt(player.x,ny))player.y=ny;
+  player.frame+=dt;
+  if(Math.abs(dx)>Math.abs(dy))player.direction=dx>0?"right":"left";
+  else player.direction=dy>0?"down":"up";
+ }
+ player.x=Math.max(15,Math.min(WORLD_W-15,player.x));
+ player.y=Math.max(25,Math.min(WORLD_H-20,player.y));
+}
+
+/* HUD dan misi */
+function updateHUD(){
+ if(currentMission<missions.length)
+  document.getElementById("mission-name").textContent="Misi: "+missions[currentMission].name;
+ document.getElementById("mission-count").textContent=currentMission+" dari 3 misi selesai";
+ document.getElementById("progress-fill").style.width=(currentMission/3*100)+"%";
+}
+function showNotice(text){
+ notice.textContent=text;notice.style.display="block";
+ clearTimeout(noticeTimer);
+ noticeTimer=setTimeout(()=>notice.style.display="none",2300);
+}
+
+function drawMissionMarker(){
+ if(currentMission>=missions.length)return;
+ const m=missions[currentMission],bob=Math.sin(performance.now()/230)*3;
+ // Tanda seru besar dan mudah dilihat
+ rect(m.x-15,m.y-57+bob,30,30,"#f0e8d3");
+ rect(m.x-12,m.y-54+bob,24,24,"#526e4c");
+ rect(m.x-2,m.y-50+bob,4,12,"#f0e8d3");
+ rect(m.x-2,m.y-35+bob,4,4,"#f0e8d3");
+}
+
+function showMissionDialogue(){
+ if(!introFinished||dialogueOpen||endingOpen||currentMission>=3)return;
+ const m=missions[currentMission];
+ if(Math.hypot(player.x-m.x,player.y-m.y)>72){
+  showNotice("Dekati tanda seru (!) terlebih dahulu.");return;
+ }
+ dialogueOpen=true;
+ document.getElementById("dialogue-title").textContent=m.title;
+ document.getElementById("dialogue-text").textContent=m.text;
+ dialogue.style.display="flex";
+}
+document.getElementById("action-button").addEventListener("click",showMissionDialogue);
+
+document.getElementById("dialogue-continue").onclick=()=>{
+ dialogue.style.display="none";dialogueOpen=false;currentMission++;
+ if(currentMission>=3){
+  endingOpen=true;ending.style.display="flex";
+  document.getElementById("mission-name").textContent="Semua misi selesai";
+  document.getElementById("mission-count").textContent="3 dari 3 misi selesai";
+  document.getElementById("progress-fill").style.width="100%";
+ }else{
+  updateHUD();showNotice("Misi selesai! Ikuti tanda seru berikutnya.");
+ }
+};
+
+document.getElementById("restart-button").onclick=()=>{
+ player.x=170;player.y=260;player.direction="down";
+ currentMission=0;endingOpen=false;dialogueOpen=false;
+ ending.style.display="none";updateHUD();
+ showNotice("Petualangan dimulai kembali.");
+};
+
+/* Analog: gerakan dibaca dari posisi jari, dengan pointer move di window
+   supaya kontrol tidak berhenti ketika jari keluar dari lingkaran. */
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+
+function updateStick(e){
+ const r=joystick.getBoundingClientRect();
+ let dx=e.clientX-(r.left+r.width/2);
+ let dy=e.clientY-(r.top+r.height/2);
+ const max=r.width*.32;
+ const distance=Math.hypot(dx,dy);
+ if(distance>max){dx=dx/distance*max;dy=dy/distance*max}
+ joyX=dx/max;joyY=dy/max;
+ stick.style.transform=`translate(${dx}px,${dy}px)`;
+}
+function resetStick(){
+ pointerId=null;joyX=0;joyY=0;
+ stick.style.transform="translate(0px,0px)";
+}
+joystick.addEventListener("pointerdown",e=>{
+ if(!introFinished||dialogueOpen||endingOpen)return;
+ e.preventDefault();
+ pointerId=e.pointerId;
+ joystick.setPointerCapture(e.pointerId);
+ updateStick(e);
+});
+window.addEventListener("pointermove",e=>{
+ if(pointerId===e.pointerId)updateStick(e);
+});
+window.addEventListener("pointerup",e=>{
+ if(pointerId===e.pointerId)resetStick();
+});
+window.addEventListener("pointercancel",resetStick);
+joystick.addEventListener("lostpointercapture",resetStick);
+
+addEventListener("keydown",e=>{
+ keys[e.key]=true;
+ if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();
+ if((e.key===" "||e.key==="Enter")&&introFinished&&!dialogueOpen&&!endingOpen)showMissionDialogue();
+});
+addEventListener("keyup",e=>keys[e.key]=false);
+
+/* Render */
+function drawWorld(){
+ drawGround();
+ drawRoads();
+ drawChannel();
+ drawPaddies();
+ drawTrees();
+ drawHouses();
+ drawObstacles();
+ drawMissionMarker();
+ drawPlayer();
+}
+function render(time){
+ const dt=lastTime?Math.min((time-lastTime)/16.67,2):1;
+ lastTime=time;
+ updatePlayer(dt);
+ updateCamera();
+ ctx.setTransform(dpr*scale,0,0,dpr*scale,-cameraX*dpr*scale,-cameraY*dpr*scale);
+ ctx.imageSmoothingEnabled=false;
+ drawWorld();
+ requestAnimationFrame(render);
+}
+
+updateHUD();
+requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
